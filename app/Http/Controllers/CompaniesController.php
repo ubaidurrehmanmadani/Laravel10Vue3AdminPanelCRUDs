@@ -2,80 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CompanyRequest;
 use App\Models\Companies;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class CompaniesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return response()->json(Companies::paginate(100));
-    }
-
-    public static function getAll() {
         return response()->json(Companies::all());
-}
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(CompanyRequest $request)
+    public function store(Request $request)
     {
-        $validator = $request->validated();
-        if (is_object($validator)) {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'website' => 'nullable|url|max:255',
+        ]);
+
+        if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-        return response()->json(Companies::create($request->all()));
+
+        $data = $request->only(['name', 'email', 'website']);
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('logos', 'public');
+            $data['logo'] = '/storage/' . $path; // e.g., /storage/logos/filename.jpg
+        }
+
+        $Companies = Companies::create($data);
+
+        return response()->json($Companies, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Companies $companies)
+    public function update(Request $request, $id)
     {
-        //
-    }
+        $Companies = Companies::findOrFail($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Companies $companies)
-    {
-        //
-    }
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'website' => 'nullable|url|max:255',
+        ]);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(CompanyRequest $request, Companies $company)
-    {
-        $validator = $request->validated();
-
-        if (is_object($validator)) {
+        if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-        $company->update($request->all());
-        return response()->json($company);
+
+        $data = $request->only(['name', 'email', 'website']);
+
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($Companies->logo) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $Companies->logo));
+            }
+            $path = $request->file('logo')->store('logos', 'public');
+            $data['logo'] = '/storage/' . $path;
+        }
+
+        $Companies->update($data);
+
+        return response()->json($Companies);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Request $request, Companies $company)
+    public function destroy($id)
     {
-        $result = $company->delete();
-        return response()->json('success');
+        $Companies = Companies::findOrFail($id);
+        if ($Companies->logo) {
+            Storage::disk('public')->delete(str_replace('/storage/', '', $Companies->logo));
+        }
+        $Companies->delete();
+        return response()->json(['message' => 'Companies deleted']);
     }
+
+    public static function getAll() { return response()->json(Companies::all()); }
 }
