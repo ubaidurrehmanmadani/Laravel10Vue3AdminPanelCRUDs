@@ -71,7 +71,7 @@
                                 <td><a :href="company.website">{{ company.name }}</a></td>
                                 <td>{{ company.email }}</td>
                                 <td>
-                                    <img v-if="company.logo" :src="company.logo" height="20" width="20" alt="Company Logo">
+                                    <img v-if="company.logo" :src="company.logo" height="50" width="50" alt="Company Logo">
                                     <span v-else>No Logo</span>
                                 </td>
                                 <td>
