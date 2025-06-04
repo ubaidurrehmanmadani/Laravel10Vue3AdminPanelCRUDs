@@ -1,3 +1,4 @@
+
 <template>
     <div class="container">
         <div class="row justify-content-center">
@@ -41,7 +42,7 @@
                                 </div>
                                 <div class="col-10">
                                     <input type="file" name="logo" id="logo" ref="logo" accept="image/*" class="form-control" @change="handleFileChange">
-                                    <img v-if="logoPreview" :src="logoPreview" height="50" width="50" class="mt-2">
+                                    <img v-if="logoPreview" :src="logoPreview" height="50" width="50" class="mt-2" alt="Logo Preview">
                                 </div>
                             </div>
                             <div class="row mb-2">
@@ -59,19 +60,21 @@
                         </div>
                         <table id="myTable" class="table table-bordered table-responsive display">
                             <thead>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Logo</th>
-                            <th>Action</th>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Logo</th>
+                                <th>Action</th>
+                            </tr>
                             </thead>
                             <tbody>
                             <tr v-for="(company, index) in companies" :key="company.id">
                                 <td>{{ index + 1 }}</td>
-                                <td><a :href="company.website">{{ company.name }}</a></td>
+                                <td><a :href="company.website" target="_blank">{{ company.name }}</a></td>
                                 <td>{{ company.email }}</td>
                                 <td>
-                                    <img v-if="company.logo" :src="company.logo" height="50" width="50" alt="Company Logo">
+                                    <img v-if="company.logo" :src="absoluteLogoUrl(company.logo)" height="20" width="20" alt="Company Logo">
                                     <span v-else>No Logo</span>
                                 </td>
                                 <td>
@@ -89,6 +92,10 @@
 </template>
 
 <script>
+import $ from 'jquery';
+import 'datatables.net-bs4';
+import 'datatables.net-buttons-bs4';
+
 export default {
     data() {
         return {
@@ -102,14 +109,45 @@ export default {
             edit_company_id: '',
             validationErrors: null,
             successMessage: null,
-        }
+            dataTable: null,
+            baseUrl: 'http://127.0.0.1:8000', // Adjust if your Laravel app is on a different URL
+        };
     },
     methods: {
+        absoluteLogoUrl(logoPath) {
+            // Ensure logo URLs are absolute for reliable display
+            return logoPath.startsWith('http') ? logoPath : `${this.baseUrl}${logoPath}`;
+        },
         getCompanies() {
             this.axios.get(this.api).then(res => {
                 this.companies = res.data;
+                this.$nextTick(() => {
+                    this.initDataTable();
+                });
             }).catch(error => {
                 console.error('Error fetching companies:', error);
+                this.validationErrors = { general: ['An error occurred while fetching companies.'] };
+            });
+        },
+        initDataTable() {
+            if (this.dataTable) {
+                this.dataTable.destroy();
+            }
+            this.$nextTick(() => {
+                this.dataTable = $('#myTable').DataTable({
+                    responsive: true,
+                    pageLength: 10,
+                    searching: true,
+                    ordering: true,
+                    order: [[0, 'asc']],
+                    columnDefs: [
+                        { targets: [3, 4], orderable: false, searchable: false },
+                    ],
+                    dom: 'Bfrtip',
+                    buttons: [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ]
+                });
             });
         },
         handleFileChange(event) {
@@ -172,7 +210,7 @@ export default {
             this.name = company.name;
             this.email = company.email;
             this.logo = null;
-            this.logoPreview = company.logo;
+            this.logoPreview = this.absoluteLogoUrl(company.logo);
             this.website = company.website;
             this.edit_company_id = company.id;
             this.validationErrors = null;
@@ -215,10 +253,15 @@ export default {
                     this.validationErrors = { general: ['An error occurred while updating the company.'] };
                 }
             });
-        }
+        },
     },
     mounted() {
         this.getCompanies();
+    },
+    beforeDestroy() {
+        if (this.dataTable) {
+            this.dataTable.destroy();
+        }
     },
 }
 </script>

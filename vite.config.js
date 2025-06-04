@@ -6,8 +6,8 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
+                'resources/js/app.js', // Ensure this points to your main.js
                 'resources/sass/app.scss',
-                'resources/js/app.js',
             ],
             refresh: true,
         }),
@@ -23,6 +23,14 @@ export default defineConfig({
     resolve: {
         alias: {
             vue: 'vue/dist/vue.esm-bundler.js',
+        },
+    },
+    server: {
+        host: '127.0.0.1', // Ensure Vite runs on localhost
+        port: 5173, // Default Vite port, adjust if needed
+        hmr: {
+            host: '127.0.0.1',
+            port: 5173,
         },
     },
 });
