@@ -61,13 +61,15 @@
                         </div>
                         <table id="employeesTable" class="table table-bordered table-responsive display">
                             <thead>
-                            <th>Index</th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Company</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Action</th>
+                            <tr>
+                                <th>Index</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Company</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Action</th>
+                            </tr>
                             </thead>
                             <tbody>
                             <tr v-for="(Employee, index) in Employees.data" :key="index">
@@ -120,10 +122,12 @@ export default {
 
         },
         getEmployees() {
-            this.axios.get(this.api).then(res => {
-                this.Employees = res.data;
+            this.axios.get('http://127.0.0.1:8000/api/get_all_employees').then(res => {
+                this.Employees = { data: res.data }; // Ensure correct structure
+            }).catch(err => {
+                console.error('Error fetching employees:', err);
+                alert('Failed to load employees');
             });
-
         },
         saveEmployee(){
             let data = {

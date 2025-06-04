@@ -66,4 +66,14 @@ class EmployeesController extends Controller
         $result = $employee->delete();
         return response()->json('success');
     }
+
+    public static function getAll()
+    {
+        $employees = Employees::select('employees.*', 'companies.name as company_name')
+            ->leftJoin('companies', 'employees.company_id', '=', 'companies.id')
+            ->get();
+
+        return response()->json($employees);
+    }
+
 }

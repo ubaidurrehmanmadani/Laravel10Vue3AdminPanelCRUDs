@@ -22,3 +22,5 @@ Route::resource('companies', \App\Http\Controllers\CompaniesController::class);
 Route::get('get_all_companies', [App\Http\Controllers\CompaniesController::class, 'getAll'])->name('getAllCompanies');
 
 Route::resource('employees', \App\Http\Controllers\EmployeesController::class);
+Route::get('get_all_employees', [App\Http\Controllers\EmployeesController::class, 'getAll'])->name('getAllEmployees');
+
